@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#ffffff">
 
-  <title>ViralPulse USA — Trending Viral Videos</title>
+  <title>NextWatchMedia</title>
   <meta name="description" content="Discover trending viral videos and the latest stories everyone is talking about in the USA.">
 
   <!-- Histats Tracking -->
@@ -101,7 +101,8 @@
       white-space: nowrap;
     }
 
-    .logo span {
+    .logo span,
+    .footer-logo span {
       color: var(--red);
     }
 
@@ -136,7 +137,8 @@
       transition: color 0.2s;
     }
 
-    .nav-inner a:hover {
+    .nav-inner a:hover,
+    .footer-links a:hover {
       color: var(--red);
     }
 
@@ -186,6 +188,7 @@
       font-size: 15px;
     }
 
+    /* Native ads */
     .video-native-ad {
       width: 100%;
       min-height: 70px;
@@ -244,37 +247,94 @@
       font-size: 14px;
     }
 
+    /* Video thumbnail */
     .video-link {
       display: block;
       position: relative;
       width: 100%;
-      background: #f4f4f4;
+      aspect-ratio: 16 / 9;
+      background: #fff5f5;
       overflow: hidden;
       cursor: pointer;
     }
 
     .video-thumbnail {
+      position: absolute;
+      inset: 0;
       display: block;
       width: 100%;
-      height: auto;
-      max-height: 600px;
+      height: 100%;
       object-fit: cover;
-      aspect-ratio: 16 / 9;
-      transition: transform 0.35s ease;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .video-thumbnail.thumbnail-waiting {
+      visibility: hidden;
+      opacity: 0;
     }
 
     .video-link:hover .video-thumbnail {
       transform: scale(1.025);
     }
 
+    /* Three-second loading screen */
+    .video-loader {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #fff5f5;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    .video-loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-spinner {
+      width: 43px;
+      height: 43px;
+      border: 4px solid #ffdadd;
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: thumbnail-spin 0.8s linear infinite;
+    }
+
+    .loader-text {
+      color: var(--red-dark);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes thumbnail-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .thumbnail-overlay {
       position: absolute;
       inset: 0;
+      z-index: 2;
       display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.12);
-      transition: background 0.25s;
+      opacity: 0;
+      visibility: hidden;
+      transition: background 0.25s, opacity 0.35s;
+    }
+
+    .thumbnail-overlay.ready {
+      opacity: 1;
+      visibility: visible;
     }
 
     .video-link:hover .thumbnail-overlay {
@@ -419,6 +479,8 @@
     }
 
     footer {
+      position: relative;
+      z-index: 1;
       border-top: 1px solid var(--border);
       background: #fff;
       padding: 28px 16px;
@@ -434,10 +496,6 @@
       margin-bottom: 7px;
     }
 
-    .footer-logo span {
-      color: var(--red);
-    }
-
     .footer-links {
       display: flex;
       justify-content: center;
@@ -446,11 +504,9 @@
       margin: 12px 0;
     }
 
-    .footer-links a:hover {
-      color: var(--red);
-    }
-
     #histats_counter {
+      position: relative;
+      z-index: 1;
       text-align: center;
       margin: 10px auto;
     }
@@ -545,7 +601,7 @@
 
   <header class="site-header">
     <div class="header-inner">
-      <a href="/" class="logo">Viral<span>Pulse</span> USA</a>
+      <a href="/" class="logo">Next<span>Watch</span>Vidio USA</a>
       <div class="header-tag">What's Trending Now</div>
     </div>
 
@@ -583,23 +639,30 @@
         <p>Take a look at the clip that's getting attention online.</p>
       </div>
 
-      <!-- Thumbnail and play button link -->
+      <!-- Thumbnail waits 3 seconds before appearing -->
       <a
         class="video-link"
+        id="featured-video-link"
         href="https://x-hubb.github.io/Badiesgirlhub/"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Watch the featured video"
       >
         <img
-          class="video-thumbnail"
-          src="https://cdn.aceimg.com/azwGEF6Az.jpg"
+          class="video-thumbnail thumbnail-waiting"
+          id="featured-thumbnail"
+          src="https://cdn.aceimg.com/m0kSSEOJk.jpg"
           alt="Featured trending video thumbnail"
           loading="eager"
           fetchpriority="high"
         >
 
-        <span class="thumbnail-overlay" aria-hidden="true">
+        <div class="video-loader" id="thumbnail-loader">
+          <div class="loader-spinner"></div>
+          <div class="loader-text">Loading featured video...</div>
+        </div>
+
+        <span class="thumbnail-overlay" id="thumbnail-overlay" aria-hidden="true">
           <span class="play-button">
             <span class="play-icon"></span>
           </span>
@@ -677,6 +740,7 @@
 
   <!-- Histats Counter -->
   <div id="histats_counter"></div>
+
   <noscript>
     <a href="https://www.histats.com/" target="_blank" rel="noopener noreferrer">
       <img
@@ -701,9 +765,26 @@
   </footer>
 
   <script>
-    // Automatically update the copyright year.
+    // Automatically update copyright year.
     document.getElementById('current-year').textContent =
       new Date().getFullYear();
+
+    // Show thumbnail and play button after 3 seconds.
+    (function () {
+      const thumbnail = document.getElementById('featured-thumbnail');
+      const loader = document.getElementById('thumbnail-loader');
+      const overlay = document.getElementById('thumbnail-overlay');
+
+      if (!thumbnail || !loader || !overlay) return;
+
+      function showThumbnail() {
+        thumbnail.classList.remove('thumbnail-waiting');
+        loader.classList.add('hidden');
+        overlay.classList.add('ready');
+      }
+
+      window.setTimeout(showThumbnail, 3000);
+    })();
 
     // Floating red particle animation.
     (function () {
@@ -762,7 +843,8 @@
             Math.PI * 2
           );
 
-          ctx.fillStyle = 'rgba(229, 57, 69,' + particle.alpha + ')';
+          ctx.fillStyle =
+            'rgba(229, 57, 69,' + particle.alpha + ')';
           ctx.fill();
 
           if (!reducedMotion) {
